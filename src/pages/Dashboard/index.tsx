@@ -40,7 +40,13 @@ const Dashboard: React.FC = () => {
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
+      const response = await api.post('/foods', {
+        ...food,
+        available: true,
+      });
+      if (response) {
+        setFoods([...foods, response.data]);
+      }
     } catch (err) {
       console.log(err);
     }
@@ -49,7 +55,10 @@ const Dashboard: React.FC = () => {
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
-    const updated = await api.put(`/foods/${editingFood.id}`, food);
+    const updated = await api.put(`/foods/${editingFood.id}`, {
+      ...food,
+      available: editingFood.available,
+    });
     if (updated) {
       const index = foods.findIndex(item => item.id === editingFood.id);
       if (index >= 0) {
@@ -61,9 +70,22 @@ const Dashboard: React.FC = () => {
 
   async function handleDeleteFood(id: number): Promise<void> {
     const response = await api.delete(`/foods/${id}`);
-    if (response.status === 200) {
+    if (response.status === 204) {
       const newFoods = foods.filter(item => item.id !== id);
       setFoods(newFoods);
+    }
+  }
+
+  async function handleToggleAvailable(id: number): Promise<void> {
+    const index = foods.findIndex(item => item.id === id);
+    const { available, ...rest } = foods[index];
+    const response = await api.put(`/foods/${id}`, {
+      ...rest,
+      available: !available,
+    });
+    if (response) {
+      foods[index] = response.data;
+      setFoods([...foods]);
     }
   }
 
@@ -104,6 +126,7 @@ const Dashboard: React.FC = () => {
               food={food}
               handleDelete={handleDeleteFood}
               handleEditFood={handleEditFood}
+              handleToggleAvailable={handleToggleAvailable}
             />
           ))}
       </FoodsContainer>
